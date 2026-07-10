@@ -12,14 +12,15 @@ with_logger(logger) do
 end
 log_image(logger, "explicit/p", p)
 
-# test serialization
-pb = PipeBuffer()
-show(pb, MIME("image/png"), p)
+# test serialization (PNG bytes are not deterministic across renders)
 data = TensorBoardLogger.preprocess("key", p, Vector())
 @test length(data) == 1
 @test first(data[1]) == "key"
-@test last(data[1]) isa TensorBoardLogger.PngImage
-@test last(data[1]).data == pb.data
+png = last(data[1])
+@test png isa TensorBoardLogger.PngImage
+@test png.data[1:8] == UInt8[0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]
+@test png.attr[:width] > 0
+@test png.attr[:height] > 0
 
 # test unpacking of array of plots
 data = TensorBoardLogger.preprocess("key", [p, p], Vector())
